@@ -267,7 +267,14 @@ fn array_to_json(array: ArrayRef) -> ArrayRef {
     let mut builder = StringBuilder::with_capacity(array_len, 0);
     for line in buf_str.lines() {
         // Format is {"":VALUE}
-        builder.append_value(&line[4..line.len() - 1]);
+        // Nulls are encoded as {}
+        if line.starts_with(r#"{"":"#) && line.ends_with("}") {
+            builder.append_value(&line[4..line.len() - 1]);
+        } else if line == "{}" {
+            builder.append_null();
+        } else {
+            panic!("unexpected JSON output {:?}", line);
+        }
     }
     assert_eq!(array_len, builder.len());
 
